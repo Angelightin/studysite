@@ -29,7 +29,13 @@ const actionSchema=z.discriminatedUnion("action",[
 const headers={"Cache-Control":"no-store"};
 export async function GET(request:Request){try{const user=await getUser(request);if(!user)return Response.json({error:"Требуется вход"},{status:401,headers});return Response.json(await readData(database(),user.id),{headers});}catch(error){console.error("Study load failed",error);return Response.json({error:"Не удалось загрузить данные. Попробуйте ещё раз."},{status:503,headers});}}
 export async function POST(request:Request){
-  if(request.headers.get("origin")&&request.headers.get("origin")!==new URL(request.url).origin)return Response.json({error:"Недопустимый запрос"},{status:403});
+  const origin=request.headers.get("origin");
+  const publicHost=(request.headers.get("x-forwarded-host")||request.headers.get("host")||"").split(",")[0].trim();
+  if(origin){
+    let originHost="";
+    try{originHost=new URL(origin).host;}catch{return Response.json({error:"Недопустимый запрос"},{status:403});}
+    if(!publicHost||originHost!==publicHost)return Response.json({error:"Недопустимый запрос"},{status:403});
+  }
   try{
     const user=await getUser(request);if(!user)return Response.json({error:"Требуется вход"},{status:401,headers});
     const raw=await request.text();if(raw.length>15000)return Response.json({error:"Слишком много данных"},{status:413});let json;try{json=JSON.parse(raw)}catch{return Response.json({error:"Некорректный запрос"},{status:400});}
