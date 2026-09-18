@@ -26,7 +26,7 @@ export default function EditForm({modal,subjects,onClose,onSave}: {modal:EditMod
   const [icon,setIcon]=useState(modal.type==="subject" ? modal.item?.icon || "code" : "code");
   const [title,setTitle]=useState(modal.type==="resource" ? modal.item?.title || "" : "");
   const [description,setDescription]=useState(modal.type==="resource" ? modal.item?.description || "" : "");
-  const [kind,setKind]=useState(modal.type==="lesson" ? modal.item?.kind || "Практика" : modal.type==="resource" ? modal.item?.kind || "other" : "other");
+  const [kind,setKind]=useState(modal.type==="lesson" ? modal.item?.kind || "Урок" : modal.type==="resource" ? modal.item?.kind || "other" : "other");
   const [url,setUrl]=useState(modal.type!=="subject" ? modal.item?.url || "" : "");
   const [subjectId,setSubjectId]=useState(modal.type!=="subject" ? modal.subjectId : "");
   const [date,setDate]=useState(modal.type==="lesson" ? modal.item?.date || modal.date : "");
@@ -36,6 +36,10 @@ export default function EditForm({modal,subjects,onClose,onSave}: {modal:EditMod
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const dialogTitle=modal.type==="subject" ? item ? "Редактировать дисциплину" : "Новая дисциплина" : modal.type==="resource" ? item ? "Редактировать ссылку" : "Новая ссылка" : item ? "Редактировать занятие" : "Новое занятие";
+  function setDuration(minutes:number){
+    const [hours,mins]=start.split(":").map(Number);const finish=hours*60+mins+minutes;
+    setEnd(`${String(Math.floor(finish/60)%24).padStart(2,"0")}:${String(finish%60).padStart(2,"0")}`);
+  }
   async function submit(e:FormEvent<HTMLFormElement>) {
     e.preventDefault(); setError("");
     const fields = new FormData(e.currentTarget);
@@ -74,8 +78,9 @@ export default function EditForm({modal,subjects,onClose,onSave}: {modal:EditMod
     </>}
     {modal.type==="lesson" && <>
       <div className="field"><label htmlFor="lesson-subject">Дисциплина</label><Pick id="lesson-subject" value={subjectId} onChange={setSubjectId} label="Выберите дисциплину" options={subjects.map(s=>({value:s.id,label:s.name}))}/></div>
-      <div className="form-columns"><label className="field">{modal.item?.repeat ? "Дата начала повторения" : "Дата"}<input type="date" name="date" required value={date} onInput={e=>setDate(e.currentTarget.value)} onChange={e=>setDate(e.target.value)}/></label><div className="field"><label htmlFor="lesson-kind">Тип занятия</label><Pick id="lesson-kind" label="Тип занятия" value={kind} onChange={setKind} options={["Лекция","Практика","Лабораторная","Семинар","Другое"].map(v=>({value:v,label:v}))}/></div></div>
+      <div className="form-columns"><label className="field">{modal.item?.repeat ? "Дата начала повторения" : "Дата"}<input type="date" name="date" required value={date} onInput={e=>setDate(e.currentTarget.value)} onChange={e=>setDate(e.target.value)}/></label><div className="field"><label htmlFor="lesson-kind">Тип занятия</label><Pick id="lesson-kind" label="Тип занятия" value={kind} onChange={setKind} options={["Урок","Лекция","Практика","Лабораторная","Семинар","Другое"].map(v=>({value:v,label:v}))}/></div></div>
       <div className="form-columns"><label className="field">Начало<input type="time" name="start" required value={start} onInput={e=>setStart(e.currentTarget.value)} onChange={e=>setStart(e.target.value)}/></label><label className="field">Окончание<input type="time" name="end" required value={end} onInput={e=>setEnd(e.currentTarget.value)} onChange={e=>setEnd(e.target.value)}/></label></div>
+      <div className="duration-presets" aria-label="Быстрый выбор длительности"><span>Длительность:</span>{[40,45,60,90].map(minutes=><button key={minutes} type="button" className="duration-chip" onClick={()=>setDuration(minutes)}>{minutes} мин</button>)}</div>
       <div className="field"><label htmlFor="lesson-repeat">Повторение</label><Pick id="lesson-repeat" label="Повторение" value={repeat} onChange={setRepeat} options={[{value:"0",label:"Только в этот день"},{value:"1",label:"Каждую неделю"}]}/>{!!modal.item?.repeat && <p className="field-hint">Изменения применятся ко всем повторениям этого занятия.</p>}</div>
       <label className="field">Ссылка на занятие <span className="optional">необязательно</span><input inputMode="url" maxLength={3000} value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://…"/><span className="field-hint">Если оставить пустой, используется ссылка на урок из дисциплины.</span></label>
     </>}

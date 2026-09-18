@@ -23,7 +23,7 @@ const time=z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const actionSchema=z.discriminatedUnion("action",[
   z.object({action:z.literal("saveSubject"),id:id.optional(),name:z.string().trim().min(1,"Введите название").max(100),color:z.enum(COLORS),icon:z.enum(ICONS)}),z.object({action:z.literal("deleteSubject"),id}),
   z.object({action:z.literal("saveResource"),id:id.optional(),subjectId:id,title:z.string().trim().min(1).max(100),description:z.string().trim().max(180),kind:z.enum(["lesson","course","materials","other"]),url}),z.object({action:z.literal("deleteResource"),id}),
-  z.object({action:z.literal("saveLesson"),id:id.optional(),subjectId:id,date,start:time,end:time,kind:z.enum(["Лекция","Практика","Лабораторная","Семинар","Другое"]),repeat:z.union([z.literal(0),z.literal(1)]),url}),z.object({action:z.literal("deleteLesson"),id}),
+  z.object({action:z.literal("saveLesson"),id:id.optional(),subjectId:id,date,start:time,end:time,kind:z.enum(["Урок","Лекция","Практика","Лабораторная","Семинар","Другое"]),repeat:z.union([z.literal(0),z.literal(1)]),url}),z.object({action:z.literal("deleteLesson"),id}),
   z.object({action:z.literal("saveNote"),subjectId:id,content:z.string().max(12000)}),z.object({action:z.literal("saveTask"),subjectId:id,title:z.string().trim().min(1,"Введите название задачи").max(240)}),z.object({action:z.literal("toggleTask"),id,completed:z.union([z.literal(0),z.literal(1)])}),z.object({action:z.literal("deleteTask"),id}),
 ]);
 const headers={"Cache-Control":"no-store"};

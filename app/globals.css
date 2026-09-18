@@ -238,6 +238,25 @@ h1 { font-size:48px; font-weight:750; line-height:1.15; letter-spacing:-1.5px; m
 .calendar-event.is-selected { outline:2px solid #2d793c; outline-offset:0; box-shadow:0 0 0 3px white; z-index:1; }
 .calendar-event strong { font-size:14px; line-height:1.25; font-weight:650; }
 .calendar-event>span { font-size:13px; line-height:1.3; color:#64748b; }
+.week-timeline { min-width:900px; overflow:hidden; }
+.timeline-header { display:grid; grid-template-columns:70px repeat(7,minmax(105px,1fr)); min-height:72px; border-bottom:1px solid #dfe6ed; }
+.timeline-corner,.timeline-day-head { display:flex; align-items:center; justify-content:center; gap:7px; border-right:1px solid #dfe6ed; }
+.timeline-day-head.weekend { background:#f7f9fb; }
+.timeline-body { display:grid; grid-template-columns:70px 1fr; position:relative; }
+.timeline-hours { position:relative; border-right:1px solid #dfe6ed; background:#fff; }
+.timeline-hours span { position:absolute; left:0; right:0; transform:translateY(-50%); padding-right:10px; color:#607089; font-size:13px; text-align:right; }
+.timeline-hours span:first-child { transform:none; padding-top:5px; }
+.timeline-hours span:last-child { transform:translateY(-100%); padding-bottom:5px; }
+.timeline-days { display:grid; grid-template-columns:repeat(7,minmax(105px,1fr)); height:100%; }
+.timeline-day { position:relative; min-width:0; border-right:1px solid #dfe6ed; background-color:#fff; background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 59px,#e5eaf0 59px,#e5eaf0 60px); }
+.timeline-day.weekend { background-color:#f8fafc; }
+.timeline-event { position:absolute; left:5px; right:5px; z-index:1; padding:3px 0; }
+.timeline-event .calendar-event { height:100%; min-height:0; padding:8px 8px 7px 10px; gap:4px; overflow:hidden; }
+.timeline-event .calendar-event strong { font-size:13px; }
+.timeline-event .calendar-event>span { font-size:11px; }
+.duration-presets { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:-4px; color:#697386; font-size:13px; }
+.duration-chip { padding:6px 10px; border:1px solid #d5dce6; border-radius:999px; background:#f8fafc; color:#344054; font:inherit; cursor:pointer; }
+.duration-chip:hover { border-color:#7f91d8; background:#f0f3ff; }
 .empty-slot { width:100%; min-height:81px; height:100%; border:0; display:flex; align-items:center; justify-content:center; background:transparent; color:#769682; border-radius:7px; }
 .empty-slot svg { opacity:0; }
 .empty-slot:hover,.empty-slot:focus-visible { background:#e7f2eb80; }
