@@ -2,8 +2,26 @@ import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
 export const subjects = sqliteTable("subjects", {
   id: text("id").primaryKey(), name: text("name").notNull(),
   color: text("color").notNull(), icon: text("icon").notNull(),
+  ownerId: text("owner_id"),
   position: integer("position").notNull().default(0),
+}, t => [index("idx_subjects_owner").on(t.ownerId)]);
+
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  passwordSalt: text("password_salt").notNull(),
+  createdAt: text("created_at").notNull(),
 });
+
+export const sessions = sqliteTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull(),
+}, t => [index("idx_sessions_user").on(t.userId), index("idx_sessions_expiry").on(t.expiresAt)]);
 export const resources = sqliteTable("resources", {
   id: text("id").primaryKey(),
   subjectId: text("subject_id").notNull().references(() => subjects.id, { onDelete: "cascade" }),
