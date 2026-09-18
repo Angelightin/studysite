@@ -1,0 +1,15 @@
+services:
+  study:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: study-site
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - study_data:/data
+
+volumes:
+  study_data:
+
