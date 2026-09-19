@@ -49,6 +49,13 @@ export const tasks = sqliteTable("tasks", {
   position: integer("position").notNull().default(0),
   createdAt: text("created_at").notNull().default(""),
 }, t => [index("idx_tasks_subject_completed").on(t.subjectId, t.completed)]);
+export const attachments = sqliteTable("attachments", {
+  id:text("id").primaryKey(), subjectId:text("subject_id").notNull().references(()=>subjects.id,{onDelete:"cascade"}),
+  name:text("name").notNull(), type:text("type").notNull(), size:integer("size").notNull(), objectKey:text("object_key").notNull().unique(), uploadedAt:text("uploaded_at").notNull(),
+},t=>[index("idx_attachments_subject").on(t.subjectId)]);
+export const subjectLayouts = sqliteTable("subject_layouts", {
+  subjectId:text("subject_id").primaryKey().references(()=>subjects.id,{onDelete:"cascade"}), order:text("section_order").notNull(),
+});
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(), value: text("value").notNull(),
 });

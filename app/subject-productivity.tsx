@@ -1,66 +1,29 @@
 "use client";
-
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Check, CheckCircle2, Circle, ListTodo, NotebookPen, Plus, Save, Trash2 } from "lucide-react";
+import { useEffect,useMemo,useState,type FormEvent,type ReactNode } from "react";
+import { ArrowDown,ArrowUp,Check,CheckCircle2,Circle,Download,FileText,ListTodo,Loader2,NotebookPen,Paperclip,Plus,Save,Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import type { StudyData, Subject } from "@/lib/study";
+import { toast } from "sonner";
+import type { StudyData,Subject } from "@/lib/study";
 
-type Props = {
-  subject: Subject;
-  data: StudyData;
-  onSave: (action: Record<string, unknown>) => Promise<unknown>;
-};
-
-export default function SubjectProductivity({ subject, data, onSave }: Props) {
-  const storedNote = data.notes.find(note => note.subjectId === subject.id)?.content ?? "";
-  const [note, setNote] = useState(storedNote);
-  const [noteBusy, setNoteBusy] = useState(false);
-  const [taskTitle, setTaskTitle] = useState("");
-  const [taskBusy, setTaskBusy] = useState(false);
-  const tasks = useMemo(() => data.tasks.filter(task => task.subjectId === subject.id), [data.tasks, subject.id]);
-  const completed = tasks.filter(task => task.completed).length;
-  const progress = tasks.length ? Math.round(completed / tasks.length * 100) : 0;
-
-  useEffect(() => setNote(storedNote), [subject.id, storedNote]);
-
-  async function saveNote() {
-    setNoteBusy(true);
-    try { await onSave({ action: "saveNote", subjectId: subject.id, content: note }); }
-    finally { setNoteBusy(false); }
-  }
-
-  async function addTask(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const title = taskTitle.trim();
-    if (!title) return;
-    setTaskBusy(true);
-    try {
-      await onSave({ action: "saveTask", subjectId: subject.id, title });
-      setTaskTitle("");
-    } finally { setTaskBusy(false); }
-  }
-
-  return <div className="subject-productivity">
-    <section className="productivity-section notes-section">
-      <div className="productivity-heading"><span className="productivity-icon"><NotebookPen size={19}/></span><div><h3>Заметки</h3><p>Конспект, важные даты и напоминания</p></div></div>
-      <textarea aria-label={`Заметки по дисциплине ${subject.name}`} value={note} onChange={event => setNote(event.target.value)} maxLength={12000} placeholder="Запиши здесь то, что важно не забыть…" rows={5}/>
-      <div className="notes-footer"><span>{note.length.toLocaleString("ru-RU")} / 12 000</span><button className="btn save-note" onClick={saveNote} disabled={noteBusy || note === storedNote}><Save size={17}/>{noteBusy ? "Сохраняем…" : note === storedNote ? "Сохранено" : "Сохранить"}</button></div>
-    </section>
-
-    <section className="productivity-section tasks-section">
-      <div className="productivity-heading tasks-heading"><span className="productivity-icon"><ListTodo size={20}/></span><div><h3>Задачи</h3><p>{tasks.length ? `${completed} из ${tasks.length} выполнено` : "Добавь первую задачу"}</p></div><strong>{progress}%</strong></div>
-      <Progress value={progress} aria-label={`Выполнено ${progress}% задач по дисциплине ${subject.name}`} className="tasks-progress"/>
-      <form className="add-task-form" onSubmit={addTask}><input aria-label="Новая задача" value={taskTitle} onChange={event => setTaskTitle(event.target.value)} maxLength={240} placeholder="Например, решить задачи к пятнице"/><button className="btn primary" type="submit" disabled={taskBusy || !taskTitle.trim()}><Plus size={18}/>{taskBusy ? "Добавляем…" : "Добавить задачу"}</button></form>
-      <div className="task-list" aria-live="polite">
-        {tasks.map(task => <article key={task.id} className={`task-item ${task.completed ? "is-complete" : ""}`}>
-          <Checkbox checked={Boolean(task.completed)} onCheckedChange={checked => void onSave({ action: "toggleTask", id: task.id, completed: checked ? 1 : 0 })} aria-label={task.completed ? `Отметить задачу «${task.title}» невыполненной` : `Отметить задачу «${task.title}» выполненной`}/>
-          <span className="task-status-icon">{task.completed ? <CheckCircle2 size={17}/> : <Circle size={17}/>}</span>
-          <p>{task.title}</p>
-          <button className="mini-menu task-delete" aria-label={`Удалить задачу ${task.title}`} onClick={() => void onSave({ action: "deleteTask", id: task.id })}><Trash2 size={16}/></button>
-        </article>)}
-        {!tasks.length && <div className="tasks-empty"><Check size={20}/><span>Пока всё сделано — новых задач нет</span></div>}
-      </div>
-    </section>
-  </div>;
+type Key="links"|"notes"|"tasks"|"files";
+const defaults:Key[]=["links","notes","tasks","files"];
+const titles:Record<Key,string>={links:"Ссылки",notes:"Заметки",tasks:"Задания",files:"Файлы"};
+export default function SubjectProductivity({subject,data,onSave,onReload,linksSection}:{subject:Subject;data:StudyData;onSave:(a:Record<string,unknown>)=>Promise<unknown>;onReload:()=>Promise<void>;linksSection:ReactNode}){
+  const storedNote=data.notes.find(n=>n.subjectId===subject.id)?.content??"";const [note,setNote]=useState(storedNote);const [noteBusy,setNoteBusy]=useState(false);const [taskTitle,setTaskTitle]=useState("");const [taskBusy,setTaskBusy]=useState(false);const [fileBusy,setFileBusy]=useState(false);
+  const saved=data.layouts.find(l=>l.subjectId===subject.id)?.order;const parsed=useMemo(()=>{try{const value=JSON.parse(saved||"");return Array.isArray(value)&&defaults.every(k=>value.includes(k))?value as Key[]:defaults;}catch{return defaults;}},[saved]);const [order,setOrder]=useState<Key[]>(parsed);
+  const tasks=useMemo(()=>data.tasks.filter(t=>t.subjectId===subject.id),[data.tasks,subject.id]);const files=data.attachments.filter(f=>f.subjectId===subject.id);const completed=tasks.filter(t=>t.completed).length;const progress=tasks.length?Math.round(completed/tasks.length*100):0;
+  useEffect(()=>setNote(storedNote),[subject.id,storedNote]);useEffect(()=>setOrder(parsed),[subject.id,parsed]);
+  async function move(index:number,direction:-1|1){const target=index+direction;if(target<0||target>=order.length)return;const next=[...order];[next[index],next[target]]=[next[target],next[index]];setOrder(next);try{await onSave({action:"saveSectionOrder",subjectId:subject.id,order:next});}catch{setOrder(order);}}
+  async function saveNote(){setNoteBusy(true);try{await onSave({action:"saveNote",subjectId:subject.id,content:note});}finally{setNoteBusy(false);}}
+  async function addTask(e:FormEvent<HTMLFormElement>){e.preventDefault();const title=taskTitle.trim();if(!title)return;setTaskBusy(true);try{await onSave({action:"saveTask",subjectId:subject.id,title});setTaskTitle("");}finally{setTaskBusy(false);}}
+  async function upload(e:FormEvent<HTMLFormElement>){e.preventDefault();const input=e.currentTarget.elements.namedItem("file") as HTMLInputElement;const file=input.files?.[0];if(!file)return;setFileBusy(true);try{const form=new FormData();form.set("subjectId",subject.id);form.set("file",file);const response=await fetch("/api/files",{method:"POST",body:form});const result=await response.json() as {error?:string};if(!response.ok)throw new Error(result.error||"Не удалось загрузить файл");input.value="";await onReload();toast.success("Файл прикреплён");}catch(error){toast.error(error instanceof Error?error.message:"Не удалось загрузить файл");}finally{setFileBusy(false);}}
+  async function removeFile(id:string){const response=await fetch(`/api/files?id=${encodeURIComponent(id)}`,{method:"DELETE"});if(!response.ok){toast.error("Не удалось удалить файл");return;}await onReload();toast.success("Файл удалён");}
+  const sections:Record<Key,ReactNode>={
+    links:linksSection,
+    notes:<section className="productivity-section notes-section"><div className="productivity-heading"><span className="productivity-icon"><NotebookPen size={19}/></span><div><h3>Заметки</h3><p>Конспект, важные даты и напоминания</p></div></div><textarea aria-label={`Заметки по дисциплине ${subject.name}`} value={note} onChange={e=>setNote(e.target.value)} maxLength={12000} placeholder="Запиши здесь то, что важно не забыть…" rows={5}/><div className="notes-footer"><span>{note.length.toLocaleString("ru-RU")} / 12 000</span><button className="btn save-note" onClick={saveNote} disabled={noteBusy||note===storedNote}><Save size={17}/>{noteBusy?"Сохраняем…":note===storedNote?"Сохранено":"Сохранить"}</button></div></section>,
+    tasks:<section className="productivity-section tasks-section"><div className="productivity-heading tasks-heading"><span className="productivity-icon"><ListTodo size={20}/></span><div><h3>Задания</h3><p>{tasks.length?`${completed} из ${tasks.length} выполнено`:"Добавь первое задание"}</p></div><strong>{progress}%</strong></div><Progress value={progress} className="tasks-progress"/><form className="add-task-form" onSubmit={addTask}><input value={taskTitle} onChange={e=>setTaskTitle(e.target.value)} maxLength={240} placeholder="Например, решить задачи к пятнице"/><button className="btn primary" disabled={taskBusy||!taskTitle.trim()}><Plus size={18}/>Добавить</button></form><div className="task-list">{tasks.map(task=><article key={task.id} className={`task-item ${task.completed?"is-complete":""}`}><Checkbox checked={Boolean(task.completed)} onCheckedChange={checked=>void onSave({action:"toggleTask",id:task.id,completed:checked?1:0})}/><span className="task-status-icon">{task.completed?<CheckCircle2 size={17}/>:<Circle size={17}/>}</span><p>{task.title}</p><button className="mini-menu task-delete" onClick={()=>void onSave({action:"deleteTask",id:task.id})}><Trash2 size={16}/></button></article>)}{!tasks.length&&<div className="tasks-empty"><Check size={20}/><span>Новых заданий нет</span></div>}</div></section>,
+    files:<section className="productivity-section files-section"><div className="productivity-heading"><span className="productivity-icon"><Paperclip size={19}/></span><div><h3>Файлы</h3><p>Документы, изображения и архивы до 10 МБ</p></div></div><form className="file-upload" onSubmit={upload}><input name="file" type="file" required/><button className="btn primary" disabled={fileBusy}>{fileBusy?<Loader2 className="spin" size={18}/>:<Plus size={18}/>}Прикрепить</button></form><div className="file-list">{files.map(file=><article className="file-item" key={file.id}><FileText size={20}/><div><strong>{file.name}</strong><span>{(file.size/1024/1024).toLocaleString("ru-RU",{maximumFractionDigits:2})} МБ</span></div><a className="mini-menu" href={`/api/files?id=${encodeURIComponent(file.id)}`} title="Скачать"><Download size={17}/></a><button className="mini-menu" onClick={()=>void removeFile(file.id)} title="Удалить"><Trash2 size={17}/></button></article>)}{!files.length&&<p className="files-empty">Пока нет прикреплённых файлов</p>}</div></section>
+  };
+  return <div className="subject-productivity sortable-sections">{order.map((key,index)=><div className="sortable-section" key={key}><div className="section-order-bar"><span>{titles[key]}</span><button onClick={()=>void move(index,-1)} disabled={index===0} aria-label={`Поднять раздел ${titles[key]}`}><ArrowUp size={16}/></button><button onClick={()=>void move(index,1)} disabled={index===order.length-1} aria-label={`Опустить раздел ${titles[key]}`}><ArrowDown size={16}/></button></div>{sections[key]}</div>)}</div>;
 }
